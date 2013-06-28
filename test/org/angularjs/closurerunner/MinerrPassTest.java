@@ -1,19 +1,3 @@
-/*
- * Copyright 2013 The Closure Compiler Authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package org.angularjs.closurerunner;
 
 import com.google.javascript.jscomp.AbstractCompiler;
@@ -39,27 +23,24 @@ import java.io.PrintStream;
 public class MinerrPassTest extends CompilerTestCase {
 
   private ByteArrayOutputStream dummyOutput;
-  private JsAst testSubAST;
+  private String subCode;
 
   public MinerrPassTest() {
     super();
     enableLineNumberCheck(false);
     dummyOutput = new ByteArrayOutputStream();
+    subCode = null;
   }
 
   public void setUp() throws Exception {
     super.setUp();
     dummyOutput.reset();
+    subCode = null;
   }
 
   @Override
   public CompilerPass getProcessor(Compiler compiler) {
-    Node functionDef = null;
-    if (testSubAST != null) {
-      Node root = testSubAST.getAstRoot(compiler);
-      functionDef = root.getFirstChild().detachFromParent();
-    }
-    return new MinerrPass(compiler, new PrintStream(dummyOutput), functionDef);
+    return new MinerrPass(compiler, new PrintStream(dummyOutput), subCode);
   }
 
   @Override
@@ -151,10 +132,9 @@ public class MinerrPassTest extends CompilerTestCase {
   }
 
   public void testMinerrPassShouldSubstituteTheMinerrDefinition() {
-    SourceFile dummyProductionSource = SourceFile.fromCode("minErr.js",
-      "function minErr(module) {\n"
-      +"return module + 42; }");
-    testSubAST = new JsAst(dummyProductionSource);
+    subCode = 
+      "function minErr(module) {\n" +
+      "  return module + 42; }";
     test("function minErr(module) {\n"
         +"  console.log('This should be ripped out.'); }",
         "function minErr(module) {\n"
@@ -162,10 +142,9 @@ public class MinerrPassTest extends CompilerTestCase {
   }
 
   public void testMinerrPassSubstitutionPreservesRegularExpressions() {
-    SourceFile dummyProductionSource = SourceFile.fromCode("minErr.js",
-      "function minErr(module) {\n"
-      +"return new RegExp(module + '\\\\d+'); }");
-    testSubAST = new JsAst(dummyProductionSource);
+    subCode = 
+      "function minErr(module) {\n" +
+      "return new RegExp(module + '\\\\d+'); }";
     test("function minErr(module) {\n"
         +"  console.log('This should be ripped out.'); }",
         "function minErr(module) {\n"
