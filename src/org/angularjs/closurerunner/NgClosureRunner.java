@@ -1,8 +1,6 @@
 package org.angularjs.closurerunner;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Sets;
 
 import com.google.javascript.jscomp.AbstractCompiler;
 import com.google.javascript.jscomp.CommandLineRunner;
@@ -10,40 +8,31 @@ import com.google.javascript.jscomp.CompilerOptions;
 import com.google.javascript.jscomp.CompilerPass;
 import com.google.javascript.jscomp.CustomPassExecutionTime;
 
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.CmdLineException;
-import org.kohsuke.args4j.Option;
-import org.kohsuke.args4j.OptionDef;
-import org.kohsuke.args4j.spi.OptionHandler;
-import org.kohsuke.args4j.spi.Parameters;
-import org.kohsuke.args4j.spi.Setter;
-import org.kohsuke.args4j.spi.StringOptionHandler;
-
 import java.io.IOException;
 import java.io.PrintStream;
 
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 public class NgClosureRunner extends CommandLineRunner {
 
-  protected NgClosureRunner(String[] args) {
+  private boolean minerrPass;
+  private String minerrErrors, minerrUrl;
+
+  protected NgClosureRunner(String[] args, 
+                            boolean minerrPass, 
+                            String minerrErrors, 
+                            String minerrUrl) {
     super(args);
+    this.minerrPass = minerrPass;
+    
+    if (minerrErrors != null) {
+      this.minerrErrors = minerrErrors;
+    } else {
+      this.minerrErrors = "errors.json";
+    }
+    this.minerrUrl = minerrUrl;
   }
-
-  @Option(name = "--minerr_pass",
-    handler = BooleanOptionHandler.class,
-    usage = "Strip error messages from calls to minErr instances")
-  private boolean minerrPass = false;
-
-  @Option(name = "--minerr_errors",
-    handler = StringOptionHandler.class,
-    usage = "Output stripped error messages to a file")
-  private String minerrErrors = "errors.json";
-
-  @Option(name = "--minerr_url",
-    handler = StringOptionHandler.class,
-    usage = "MinErr error messages will log links with this url prefix")
-  private String minerrUrl = null;
 
   private CompilerPass createMinerrPass() throws IOException {
     AbstractCompiler compiler = createCompiler();
@@ -74,48 +63,27 @@ public class NgClosureRunner extends CommandLineRunner {
     return options;
   }
 
-  public static class BooleanOptionHandler extends OptionHandler<Boolean> {
-    private static final Set<String> TRUES =
-        Sets.newHashSet("true", "on", "yes", "1");
-    private static final Set<String> FALSES =
-        Sets.newHashSet("false", "off", "no", "0");
-    public BooleanOptionHandler(
-        CmdLineParser parser, OptionDef option,
-        Setter<? super Boolean> setter) {
-      super(parser, option, setter);
-    }
-    @Override
-    public int parseArguments(Parameters params) throws CmdLineException {
-      String param = null;
-      try {
-        param = params.getParameter(0);
-      } catch (CmdLineException e) {
-        param = null; // to stop linter complaints
-      }
-      if (param == null) {
-        setter.addValue(true);
-        return 0;
-      } else {
-        String lowerParam = param.toLowerCase();
-        if (TRUES.contains(lowerParam)) {
-          setter.addValue(true);
-        } else if (FALSES.contains(lowerParam)) {
-          setter.addValue(false);
-        } else {
-          setter.addValue(true);
-          return 0;
-        }
-        return 1;
-      }
-    }
-    @Override
-    public String getDefaultMetaVariable() {
-      return null;
-    }
-  }
-
   public static void main(String[] args) {
-    NgClosureRunner runner = new NgClosureRunner(args);
+    boolean minerrPass = false;
+    String minerrErrors = "errors.json", minerrUrl = null;
+    List<String> passthruArgs = new ArrayList<String>();
+
+    for (int i = 0; i < args.length; i++) {
+      String arg = args[i];
+      if (arg.equals("--minerr_pass")) {
+        minerrPass = true;
+      } else if (arg.equals("--minerr_errors")) {
+        minerrErrors = args[++i];
+      } else if (arg.equals("--minerr_url")) {
+        minerrUrl = args[++i];
+      } else {
+        passthruArgs.add(arg);
+      }
+    }
+
+    NgClosureRunner runner = new NgClosureRunner(passthruArgs.toArray(new String[]{}), 
+      minerrPass, minerrErrors, minerrUrl);
+
     if (runner.shouldRunCompiler()) {
       runner.run();
     } else {
