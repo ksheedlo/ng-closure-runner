@@ -3,6 +3,7 @@ package org.angularjs.closurerunner;
 import com.google.common.collect.ArrayListMultimap;
 
 import com.google.javascript.jscomp.AbstractCompiler;
+import com.google.javascript.jscomp.Compiler;
 import com.google.javascript.jscomp.CommandLineRunner;
 import com.google.javascript.jscomp.CompilerOptions;
 import com.google.javascript.jscomp.CompilerPass;
@@ -18,6 +19,7 @@ public class NgClosureRunner extends CommandLineRunner {
 
   private boolean minerrPass;
   private String minerrErrors, minerrUrl;
+  private Compiler cachedCompiler;
 
   protected NgClosureRunner(String[] args, 
                             boolean minerrPass, 
@@ -61,6 +63,16 @@ public class NgClosureRunner extends CommandLineRunner {
       }
     }
     return options;
+  }
+
+  @Override
+  protected Compiler createCompiler() {
+    // Always use the same compiler.
+    if (cachedCompiler != null) {
+      return cachedCompiler;
+    }
+    cachedCompiler = super.createCompiler();
+    return cachedCompiler;
   }
 
   public static void main(String[] args) {
