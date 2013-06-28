@@ -1,1 +1,7 @@
-build/
+build/classes
+build/test
+build/testoutput
+
+# Test output noise
+TESTS-TestSuites.xml
+
