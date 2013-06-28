@@ -1,17 +1,63 @@
 <project name="ng-closure-runner" basedir="." default="jar">
 
-  <property name="build.dir" value="build" />
-  <property name="src.dir" value="src" />
-  <property name="lib.dir" value="lib" />
-  <property name="classes.dir" value="build/classes" />
+  <property name="build.dir" value="${basedir}/build" />
+  <property name="src.dir" value="${basedir}/src" />
+  <property name="lib.dir" value="${basedir}/lib" />
+  <property name="test.dir" value="${basedir}/test" />
+  <property name="classes.dir" value="${build.dir}/classes" />
+  <property name="testClasses.dir" value="${build.dir}/test" />
 
-  <path id="classpath">
+  <property name="test.class" value="*Test" />
+  <property name="test.fork" value="true" />
+
+  <path id="srcclasspath.path">
+    <fileset dir="${lib.dir}">
+      <include name="compiler.jar" />
+    </fileset>
+  </path>
+
+  <path id="allclasspath.path">
     <fileset dir="${lib.dir}" includes="**/*.jar"/>
   </path>
 
   <target name="compile">
     <mkdir dir="${classes.dir}" />
-    <javac srcdir="${src.dir}" destdir="${classes.dir}" classpathref="classpath" />
+    <javac srcdir="${src.dir}" destdir="${classes.dir}" 
+      classpathref="srcclasspath.path" />
+  </target>
+
+  <target name="compile-tests" depends="compile" 
+    description="compile the JUnit tests">
+    <mkdir dir="${testClasses.dir}" />
+    <javac srcdir="${src.dir}" destdir="${testClasses.dir}" debug="on" 
+      classpathref="srcclasspath.path" />
+    <javac srcdir="${test.dir}" destdir="${testClasses.dir}" debug="on" 
+      classpathref="allclasspath.path" />
+  </target>
+
+  <target name="test" depends="compile-tests" 
+    description="Compile and execute the JUnit tests.">
+    <mkdir dir="${build.dir}/testoutput" />
+    <junit printsummary="on" fork="${test.fork}" forkmode="once" showoutput="true" 
+      failureproperty="junit.failure">
+      <classpath refid="allclasspath.path" />
+      <classpath>
+        <pathelement location="${build.dir}/test" />
+      </classpath>
+      <batchtest todir="${build.dir}/testoutput">
+        <formatter type="brief" usefile="false" />
+        <formatter type="xml" />
+        <fileset dir="${build.dir}/test">
+          <include name="**/${test.class}.class" />
+        </fileset>
+      </batchtest>
+    </junit>
+    <junitreport>
+      <fileset dir="${build.dir}/testoutput" includes="*.xml" />
+      <report todir="${build.dir}/testoutput" />
+    </junitreport>
+    <fail if="junit.failure" 
+      message="Unit tests failed. See build/testoutput/index.html" />
   </target>
 
   <target name="jar" depends="compile">
