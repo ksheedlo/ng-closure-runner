@@ -24,16 +24,16 @@
   <target name="compile">
     <mkdir dir="${classes.dir}" />
     <javac srcdir="${src.dir}" destdir="${classes.dir}" 
-      classpathref="srcclasspath.path" />
+      classpathref="srcclasspath.path" source="1.6" />
   </target>
 
   <target name="compile-tests" depends="compile" 
     description="compile the JUnit tests">
     <mkdir dir="${testClasses.dir}" />
     <javac srcdir="${src.dir}" destdir="${testClasses.dir}" debug="on" 
-      classpathref="srcclasspath.path" />
+      classpathref="srcclasspath.path" source="1.6" />
     <javac srcdir="${test.dir}" destdir="${testClasses.dir}" debug="on" 
-      classpathref="allclasspath.path" />
+      classpathref="allclasspath.path" source="1.6" />
   </target>
 
   <target name="test" depends="compile-tests" 
