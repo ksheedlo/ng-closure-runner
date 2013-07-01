@@ -75,7 +75,7 @@
   <target name="zip" depends="jar">
     <copy file="${build.dir}/ngcompiler.jar" todir="${basedir}" />
     <zip destfile="${assets.dir}/ng-closure-runner.zip"
-      basedir="${basedir}" includes="LICENSE-MIT,README.md,ngcompiler.jar" />
+      basedir="${basedir}" includes="LICENSE,README.md,ngcompiler.jar" />
     <delete file="${basedir}/ngcompiler.jar" />
   </target>
 
